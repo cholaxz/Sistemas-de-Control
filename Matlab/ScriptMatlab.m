@@ -186,3 +186,36 @@ Risetime=10;
 %    i=i+1;
 %end
 stepinfo(FTLC_Compensada)
+
+%%%%Compensacion por variables de estado%%%%
+
+[n, d] = tfdata(FTLC, 'v');     %Coeficientes del numerador y el denominador de la FTLC
+[E1, E2, E3, E4] = tf2ss(n, d); %Obtengo el sistema en variables de estado
+
+%Determino si el sistema es controlable o no
+
+Controlabilidad = [E2 E1*E2 E1^2*E2];
+if det(Controlabilidad)~=0
+    display('El sistema es controlable.');
+    Controlable=true;
+else
+    display('Cuidado! El sistema no es controlable.')
+    Controlable=false;
+end
+
+if(Controlable) %Si el sistema es controlable, sera compensado por variables de estado.
+    polosExtras= -100;      %Para la proxima funcion hace falta agregar dos polos.
+                               %Agregamos los dos polos lo suficientemente
+                               %alejados para que no interfieran con la
+                               %respuesta del sistema.
+    vectorK = place(E1, E2, [transpose(polosDeseados), polosExtras]); %Creo el vector k para el calculo del compensador
+    Sistema_Compensado_Variables_Estado=ss(E1-E2*vectorK, E2, E3, E4); %Creo el sistema compensado en variables de estado
+    [n_compensado, d_compensado] = ss2tf(E1-E2*vectorK, E2, E3, E4); %Lo transformo a TF
+    FT_Compensado_Variables_Estado = tf(n_compensado, d_compensado);
+    stepinfo(FT_Compensado_Variables_Estado)
+    %Nota: Por alguna razon compenso para el ojete.
+    %Tiene que ver con el polo extra, no se porque.
+end
+
+
+
