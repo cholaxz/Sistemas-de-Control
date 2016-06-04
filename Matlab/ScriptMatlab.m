@@ -212,7 +212,8 @@ else
 end
 
 if(Controlable) %Si el sistema es controlable, sera compensado por variables de estado.
-    polosExtras= -1800;      %Para la proxima funcion hace falta agregar dos polos.
+    alpha=5;  %Podemos elegir un polo mas alejado si lo deseamos. Antes habia elegido -2000.
+    polosExtras= -(alpha*wn);  
                                %Agregamos los dos polos lo suficientemente
                                %alejados para que no interfieran con la
                                %respuesta del sistema.
