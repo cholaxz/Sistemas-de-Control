@@ -48,7 +48,7 @@ Objetivo=1;
 
 % Especificaciones Transistorio
 tr=1.4; % Tiempo de Levantamiento (lo que tarda en llegar del 10% al 90%)
-Mp=0.01; %El sobre paso no puede ser 0!
+Mp=0.1/100; %El sobre paso no puede ser 0!
 
 
 zita=1/sqrt(((-pi/log(Mp))^2)+1);
@@ -61,6 +61,10 @@ zita=1/sqrt(((-pi/log(Mp))^2)+1);
     
 wn=(0.8+2.5*zita)/tr; 
 
+
+F_Ideal = tf(wn^2, [1, 2*zita*wn, wn^2]);
+display('Sistema "Ideal"')
+stepinfo(F_Ideal)
 polosDeseados = [-zita*wn+1i*wn*sqrt(1-zita^2);-zita*wn-1i*wn*sqrt(1-zita^2)];
 p1 = polosDeseados(1);
 p2 = polosDeseados(2);
@@ -105,7 +109,9 @@ modp3=abs(p1-p(3));
 modp=abs(p1-polo);
 modz=abs(p1-cero);
 K=(modp1*modp2*modp3*modp)/(modz*k); %Algo esta mal con K. Uso k de la funcion a lazo abierto, no se por que. 
-K=1.15; %Fijarse que K esta modificado. Tener en cuenta esto.
+%K=1.15; %Fijarse que K esta modificado. Tener en cuenta esto. Para sobre
+%paso de 1/100.
+K=1.3;
 Comp = K*C;
 
 %-------------Grafica de rlocus-------------%
@@ -118,6 +124,7 @@ Comp = K*C;
 %-------------respuesta en frecuencia-------------
 FTLC_Compensada = DisAng*Ga*feedback(Gaux*Comp, Sensor)*Rrueda;
 %step(FTLC)
+display('Sistema sin Compensar')
 stepinfo(FTLC)
 %stepinfo(FTLC_Compensada)
 %sys=FTCL2; 
@@ -185,10 +192,11 @@ Risetime=10;
 %    Ki=Ki-paso;
 %    i=i+1;
 %end
+display('Sistema Compensado por el Metodo de Lugar de Raices (con Ganancia ajustada)')
 stepinfo(FTLC_Compensada)
 
 %%%%Compensacion por variables de estado%%%%
-
+display('Variables de estado')
 [n, d] = tfdata(FTLC, 'v');     %Coeficientes del numerador y el denominador de la FTLC
 [E1, E2, E3, E4] = tf2ss(n, d); %Obtengo el sistema en variables de estado
 
@@ -204,7 +212,7 @@ else
 end
 
 if(Controlable) %Si el sistema es controlable, sera compensado por variables de estado.
-    polosExtras= -100;      %Para la proxima funcion hace falta agregar dos polos.
+    polosExtras= -1800;      %Para la proxima funcion hace falta agregar dos polos.
                                %Agregamos los dos polos lo suficientemente
                                %alejados para que no interfieran con la
                                %respuesta del sistema.
@@ -212,10 +220,14 @@ if(Controlable) %Si el sistema es controlable, sera compensado por variables de 
     Sistema_Compensado_Variables_Estado=ss(E1-E2*vectorK, E2, E3, E4); %Creo el sistema compensado en variables de estado
     [n_compensado, d_compensado] = ss2tf(E1-E2*vectorK, E2, E3, E4); %Lo transformo a TF
     FT_Compensado_Variables_Estado = tf(n_compensado, d_compensado);
+    display('Sistema compensado por Variables de Estado')
     stepinfo(FT_Compensado_Variables_Estado)
     %Nota: Por alguna razon compenso para el ojete.
     %Tiene que ver con el polo extra, no se porque.
 end
 
+
+%Criterio de polos dominantes, nos permite introducir otro polo de manera
+%que este no afecte de manera significante a la dinamica del sistema.
 
 
