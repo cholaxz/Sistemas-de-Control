@@ -83,9 +83,7 @@ FTLA = Gaux*Sensor;
 FTLC = DisAng*Ga*feedback(Gaux, Sensor)*Rrueda;
 F=DisAng*Ga*feedback(Gaux*Gain, Sensor)*Rrueda;
 %-------------Bisectriz-------------%
-
 [z,p,k]=zpkdata(FTLA,'v');
-
 %aporte de fase de los polos al punto de diseño
 angp1=180-atand(abs(imag(p(1))-imag(p1))/abs(real(p1)-real(p(1))));    
 angp2=atand(abs(imag(p(2))-imag(p1))/abs(real(p1)-real(p(2))));
@@ -108,9 +106,7 @@ modp2=abs(p1-p(2));
 modp3=abs(p1-p(3));
 modp=abs(p1-polo);
 modz=abs(p1-cero);
-K=(modp1*modp2*modp3*modp)/(modz*k); %Algo esta mal con K. Uso k de la funcion a lazo abierto, no se por que. 
-%K=1.15; %Fijarse que K esta modificado. Tener en cuenta esto. Para sobre
-%paso de 1/100.
+K=(modp1*modp2*modp3*modp)/(modz*k);
 K=1.3;
 Comp = K*C;
 
@@ -152,6 +148,7 @@ while(trr>1 && overshoot<0.01)
 end
 
 %Tabla Routh-Hurwitz
+EcuacionCaracteristica = 1+Gmotor * tf(1, [1, 0]) * RelacionEngranajes*Potenciometro*Gb;
 x = sym ('x');
 A=L*Jt;
 B=R*Jt+Bm*L;
@@ -192,17 +189,24 @@ Risetime=10;
 %    Ki=Ki-paso;
 %    i=i+1;
 %end
-display('Sistema Compensado por el Metodo de Lugar de Raices (con Ganancia ajustada)')
+display('Sistema Compensado por el Metodo de Lugar de Raices (con ganancia ajustada)')
 stepinfo(FTLC_Compensada)
 
-%%%%Compensacion por variables de estado%%%%
+%%%%Compensacion por variables de estado%%%%%
 display('Variables de estado')
 [n, d] = tfdata(FTLC, 'v');     %Coeficientes del numerador y el denominador de la FTLC
-[E1, E2, E3, E4] = tf2ss(n, d); %Obtengo el sistema en variables de estado
-
-%Determino si el sistema es controlable o no
-
-Controlabilidad = [E2 E1*E2 E1^2*E2];
+[E1, E2, E3, E4] = tf2ss(n, d); %Obtengo el sistema en espacio de estados
+%Determino la Observabilidad del sistema
+Observabilidad = [E3; E3*E1; E3*(E1^2)];
+if det(Observabilidad)~=0
+    display('El sistema es observable.')
+    Observable=true;
+else
+    display('El sistema no es observable.')
+    Observable=false;
+end
+%Determino la Controlabilidad del sistema
+Controlabilidad = [E2 E1*E2 (E1^2)*E2];
 if det(Controlabilidad)~=0
     display('El sistema es controlable.');
     Controlable=true;
@@ -211,10 +215,10 @@ else
     Controlable=false;
 end
 
-if(Controlable) %Si el sistema es controlable, sera compensado por variables de estado.
-    alpha=5;  %Podemos elegir un polo mas alejado si lo deseamos. Antes habia elegido -2000.
+if(Controlable && Observable) %Si el sistema es controlable, sera compensado por variables de estado.
+    alpha=5;  
     polosExtras= -(alpha*wn);  
-                               %Agregamos los dos polos lo suficientemente
+                               %Agregamos un polo lo suficientemente
                                %alejados para que no interfieran con la
                                %respuesta del sistema.
     vectorK = place(E1, E2, [transpose(polosDeseados), polosExtras]); %Creo el vector k para el calculo del compensador
@@ -223,8 +227,6 @@ if(Controlable) %Si el sistema es controlable, sera compensado por variables de 
     FT_Compensado_Variables_Estado = tf(n_compensado, d_compensado);
     display('Sistema compensado por Variables de Estado')
     stepinfo(FT_Compensado_Variables_Estado)
-    %Nota: Por alguna razon compenso para el ojete.
-    %Tiene que ver con el polo extra, no se porque.
 end
 
 
