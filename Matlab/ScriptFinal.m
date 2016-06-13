@@ -128,24 +128,6 @@ stepinfo(FTLC)
 %BW = bandwidth(FTCL2);
 %nyquist(FTCL2);
 
-%Ante de compensar
-i=1;
-paso=0.5;
-Gc=0;
-info=stepinfo(FTLC);
-trr=info.RiseTime;
-overshoot=info.Overshoot;
-while(trr>1 && overshoot<0.01)
-    Gc=Gc+paso;
-    F=DisAng*Ga*feedback(Gaux*Gc, Sensor)*Rrueda;
-    info=stepinfo(F);
-    auto(i).Ganancia=Gc;
-    auto(i).RiseTime=info.RiseTime;
-    auto(i).Overshoot=info.Overshoot;
-    trr=info.RiseTime;
-    overshoot=info.Overshoot;
-    i=i+1;
-end
 
 %Tabla Routh-Hurwitz
 EcuacionCaracteristica = 1+Gmotor * tf(1, [1, 0]) * RelacionEngranajes*Potenciometro*Gb;
@@ -171,24 +153,7 @@ while(lalala<4)
 end
 
 
-%Ajustar ganancia
-paso=0.01;
-i=1;
-Ki=K;
-Overshoot=1;
-Risetime=10;
-%while((Overshoot>0.01 || Risetime>1) && i<100)
-%    Comp=Ki*C;
-%   F_Compensada=DisAng*Ga*feedback(Gaux*Comp, Sensor)*Rrueda;
-%  info=stepinfo(F_Compensada);
-%    auto(i).Ganancia = Ki;
-%    auto(i).RiseTime=info.RiseTime;
-%    auto(i).Overshoot=info.Overshoot;
-%    Overshoot=info.Overshoot;
-%    Risetime = info.RiseTime;
-%    Ki=Ki-paso;
-%    i=i+1;
-%end
+
 display('Sistema Compensado por el Metodo de Lugar de Raices (con ganancia ajustada)')
 stepinfo(FTLC_Compensada)
 
