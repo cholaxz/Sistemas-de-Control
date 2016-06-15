@@ -81,7 +81,6 @@ Sensor = Potenciometro * Gb; %H
 
 FTLA = Gaux*Sensor;
 FTLC = DisAng*Ga*feedback(Gaux, Sensor)*Rrueda;
-F=DisAng*Ga*feedback(Gaux*Gain, Sensor)*Rrueda;
 %-------------Bisectriz-------------%
 [z,p,k]=zpkdata(FTLA,'v');
 %aporte de fase de los polos al punto de diseño
@@ -107,7 +106,7 @@ modp3=abs(p1-p(3));
 modp=abs(p1-polo);
 modz=abs(p1-cero);
 K=(modp1*modp2*modp3*modp)/(modz*k);
-K=1.3;
+%K=1.3;
 Comp = K*C;
 
 %-------------Grafica de rlocus-------------%
