@@ -156,7 +156,7 @@ stepinfo(FTLC_Compensada)
 
 %%%%Compensacion por variables de estado%%%%%
 display('Variables de estado')
-[n, d] = tfdata(FTLC, 'v');     %Coeficientes del numerador y el denominador de la FTLC
+[n, d] = tfdata(Gaux, 'v');     %Coeficientes del numerador y el denominador de la FTLC
 [E1, E2, E3, E4] = tf2ss(n, d); %Obtengo el sistema en espacio de estados
 %Determino la Observabilidad del sistema
 Observabilidad = [E3; E3*E1; E3*(E1^2)];
@@ -187,6 +187,7 @@ if(Controlable && Observable) %Si el sistema es controlable, sera compensado por
     Sistema_Compensado_Variables_Estado=ss(E1-E2*vectorK, E2, E3, E4); %Creo el sistema compensado en variables de estado
     [n_compensado, d_compensado] = ss2tf(E1-E2*vectorK, E2, E3, E4); %Lo transformo a TF
     FT_Compensado_Variables_Estado = tf(n_compensado, d_compensado);
+    [z_estado, p_estado, k_estado] = tf2zpk(n_compensado, d_compensado);
     display('Sistema compensado por Variables de Estado')
     stepinfo(FT_Compensado_Variables_Estado)
 end
