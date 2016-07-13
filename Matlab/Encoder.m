@@ -47,8 +47,8 @@ PosInicial=0;
 Objetivo=1;
 
 % Especificaciones Transistorio
-tr=1; % Tiempo de Levantamiento (lo que tarda en llegar del 10% al 90%). El original era 10
-Mp=2/100; %El sobre paso no puede ser 0! El original era 2/100
+tr=1.5; % Tiempo de Levantamiento (lo que tarda en llegar del 10% al 90%). El original era 10
+Mp=0.1/100; %El sobre paso no puede ser 0! El original era 2/100
 
 
 zita=1/sqrt(((-pi/log(Mp))^2)+1);
@@ -75,7 +75,7 @@ p2 = polosDeseados(2);
 I = tf([1],[1 0]); %Integrador
 Gmotor = tf([Ki],[L*Jt R*Jt+Bm*L R*Bm+Ki*Kb]); %FT del motor
 Gaux = Gmotor * I * RelacionEngranajes*Rrueda; %G
-Sensor = tf(10/2, [0.1 1]);%Encoder
+Sensor = tf(10/2, [0.1 1]);%Encoder [0.1 1]
 
 FTLA = Gaux*Sensor;
 FTLC = Ga*feedback(Gaux, Sensor);
@@ -85,9 +85,12 @@ FTLC = Ga*feedback(Gaux, Sensor);
 angp1=180-atand(abs(imag(p(1))-imag(p1))/abs(real(p1)-real(p(1))));    
 angp2=atand(abs(imag(p(2))-imag(p1))/abs(real(p1)-real(p(2))));
 angp3=atand(abs(imag(p(3))-imag(p1))/abs(real(p1)-real(p(3))));
+angp4=atand(abs(imag(p(4))-imag(p1))/abs(real(p1)-real(p(4))));
 
 %angulo del compensador
-angComp=-180+angp1+angp2+angp3;
+anguloAportado=-angp1-angp2-angp3-angp4;
+angComp=-180-anguloAportado;
+angComp=abs(angComp);
 
 %compensador
 angbisectriz = 180-acosd(zita);
@@ -101,9 +104,10 @@ C=zpk(cero,polo,1);
 modp1=abs(p1-p(1));
 modp2=abs(p1-p(2));
 modp3=abs(p1-p(3));
+modp4=abs(p1-p(4));
 modp=abs(p1-polo);
 modz=abs(p1-cero);
-K=(modp1*modp2*modp3*modp)/(modz*k);
+K=(modp1*modp2*modp3*modp4*modp)/(modz*k);
 Comp = K*C;
 
 %-------------respuesta en frecuencia-------------
@@ -151,8 +155,8 @@ Ess_compensado = FTLA*Comp;
 %Por alguna puta razon esta dando mal el error en regimen permanente en
 %Simulink!!!!
 %Compensador en Atraso
-KvCompensado=10;
-KvSinCompensar=1.4132;
+KvCompensado=1/0.15;
+KvSinCompensar=0.5682;
 Beta = KvCompensado/KvSinCompensar;
 PoloAtraso=0.01;
 T=1/(PoloAtraso*Beta);
@@ -162,3 +166,4 @@ FTLC_Super_Compensada = Ga*feedback(CompensadorAtraso*Comp*Gaux, Sensor);
 
 pole(FTLC_Compensada)
 polosDeseados
+stepinfo(FTLC_Super_Compensada)
