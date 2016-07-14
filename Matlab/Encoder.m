@@ -21,17 +21,22 @@ Ga=VoltajeOtorgado/(2);
 
 %Ruedas
 Rrueda=(0.03); %diametro de 10 cm
-MasaTotal=10; %Masa de ruedas mas la masa del auto y del motor. El original era 16kg.
+MasaTotal=4; %Masa de ruedas mas la masa del auto y del motor. El original era 16kg.
 Jc=(MasaTotal/2)*(Rrueda^2); %momento de inercia de la carga
 Bc=0;
 
 
+noloadspeed=6430;
+stalltorque=0.7;
 %Engranajes
 MAXVelocidadAuto=40; %km/hora
-wmotor=6430*2*pi/60;
+pendiente = -stalltorque/noloadspeed;
+gravedad=9.81;
+rpm=(MasaTotal*gravedad*0.005-stalltorque)/pendiente;
+wmotor=rpm*2*pi/60;
 wauto=MAXVelocidadAuto/3.6/Rrueda;
 RelacionEngranajes = wauto/wmotor;
-RelacionEngranajes = 1/2; %Aproximacion
+RelacionEngranajes = 15/20; %Aproximacion
 
 %Ejes
 Reje = 0.005; %diametro de un centimetro
@@ -47,7 +52,7 @@ PosInicial=0;
 Objetivo=1;
 
 % Especificaciones Transistorio
-tr=1.5; % Tiempo de Levantamiento (lo que tarda en llegar del 10% al 90%). El original era 10
+tr=1.4; % Tiempo de Levantamiento (lo que tarda en llegar del 10% al 90%). El original era 10
 Mp=0.1/100; %El sobre paso no puede ser 0! El original era 2/100
 
 
@@ -120,11 +125,11 @@ stepinfo(FTLC)
 %Tabla Routh-Hurwitz
 EcuacionCaracteristica = 1+Gaux*Sensor;
 x = sym ('k');
-A=1.152819200000000e-08;
-B=2.047639613742626e-05;
-C=2.270592209807807e-04;
+A=6.488192000000000e-09;
+B=1.152724613742626e-05;
+C=1.380717209807807e-04;
 D=2.344807880651816e-04;
-E=0.00081*x;
+E=0.001215000000000*x;
 RH(1).Col1=A;
 RH(1).Col2=C;
 RH(1).Col3=E;
@@ -136,7 +141,7 @@ RH(3).Col2=-(A*0-E*B)/B;
 RH(3).Col3=0;
 RH(4).Col1=-(B*(RH(3).Col2)-D*(RH(3).Col1))/(RH(3).Col1); %*k
 RH(5).Col1=RH(3).Col2;
-LimiteSuperior= 3.2082;
+LimiteSuperior=2.309376963236687;
 FCritica=Ga*feedback(Gaux*LimiteSuperior, Sensor);
 %Imprimir Tabla
 lalala=1;
@@ -156,7 +161,7 @@ Ess_compensado = FTLA*Comp;
 %Simulink!!!!
 %Compensador en Atraso
 KvCompensado=1/0.15;
-KvSinCompensar=0.5682;
+KvSinCompensar=0.5819;
 Beta = KvCompensado/KvSinCompensar;
 PoloAtraso=0.01;
 T=1/(PoloAtraso*Beta);
@@ -167,3 +172,15 @@ FTLC_Super_Compensada = Ga*feedback(CompensadorAtraso*Comp*Gaux, Sensor);
 pole(FTLC_Compensada)
 polosDeseados
 stepinfo(FTLC_Super_Compensada)
+
+%Calculo del error verdadero
+Gcomp = Comp*Gaux;
+Geq=Gcomp*Ga/(1+Gcomp*(Sensor-Ga));
+%Compensacion del error verdadero
+%KvSinCompensar = 19.9997;
+%KvCompensado=100;
+%Beta = KvCompensado/KvSinCompensar;
+%PoloAtraso2=0.01;
+%T2=1/(PoloAtraso*Beta);
+%CeroAtraso=1/T;
+%CompensadorAtraso = zpk(-CeroAtraso, -PoloAtraso, 1);
